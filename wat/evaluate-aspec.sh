@@ -43,7 +43,7 @@ if [[ -z $TEST_DATA ]] || ! [[ -f $TEST_DATA ]]; then
 fi
 
 [[ -n $EN_DETOKENIZER ]] && \
-    if ! [[ -f $EN_DETOKENIZER ]]; then
+    if [[ -f $EN_DETOKENIZER ]]; then
         EN_DETOKENIZER=$(realpath $EN_DETOKENIZER)
     else
         usage "EN_DETOKENIZER '$EN_DETOKENIZER' not found."
