@@ -1,2 +1,7 @@
 * dnlp
 my miscellaneous tools for natural language processing
+
+* List of tools
+- *wat/*
+  - =evaluate-aspec.sh=: evaluate ASPEC Ja <-> En {dev,devtest,test} by Moses BLEU
+    (cf. http://lotus.kuee.kyoto-u.ac.jp/WAT/evaluation/index.html)
