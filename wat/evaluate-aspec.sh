@@ -37,6 +37,11 @@ __EOT__
     exit -1
 }
 
+if [[ -z $TEST_DATA ]] || ! [[ -f $TEST_DATA ]]; then
+    echo "reference file not found."
+    usage "TEST_DATA '$TEST_DATA' not found."
+fi
+
 [[ -n $EN_DETOKENIZER ]] && \
     if ! [[ -f $EN_DETOKENIZER ]]; then
         EN_DETOKENIZER=$(realpath $EN_DETOKENIZER)
@@ -131,19 +136,15 @@ OUTDIR=wat19_aspec_ja_en
 prep=$OUTDIR/ref
 tmp=$prep/tmp
 orig=$prep/orig
+test=$(basename $TEST_DATA .txt)
 
 function extract() {
-    if [[ -z $TEST_DATA ]] || ! [[ -f $TEST_DATA ]]; then
-        echo "reference file not found."
-        usage "TEST_DATA '$TEST_DATA' not found."
-    fi
-
     mkdir -p $prep $orig $tmp
-    cp $TEST_DATA $orig/$(basename $TEST_DATA)
+    cp $TEST_DATA $orig/$test.txt
 
     echo "extracting sentences..."
-    perl -ne 'chomp; @a=split/ \|\|\| /; print $a[2], "\n";' < $orig/test.txt > $orig/test.ja
-    perl -ne 'chomp; @a=split/ \|\|\| /; print $a[3], "\n";' < $orig/test.txt > $orig/test.en
+    perl -ne 'chomp; @a=split/ \|\|\| /; print $a[2], "\n";' < $orig/$test.txt > $orig/$test.ja
+    perl -ne 'chomp; @a=split/ \|\|\| /; print $a[3], "\n";' < $orig/$test.txt > $orig/$test.en
 }
 
 function tokenize_ja() {
@@ -186,15 +187,14 @@ function detokenize() {
 }
 
 lang=$1
-if ! [[ -f $prep/ref.$lang ]]; then
+if ! [[ -f $prep/ref.$test.$lang ]]; then
     extract
     echo "tokenizing reference sentences..."
-    cat $orig/test.$lang | tokenize $lang >$prep/ref.$lang
+    cat $orig/$test.$lang | tokenize $lang >$prep/ref.$test.$lang
 fi
 
 echo "tokenizing $SYSOUT in $lang..."
-
 cat "$SYSOUT" | \
     detokenize $lang | \
     tokenize $lang | \
-    $MOSES_BLEU $prep/ref.$lang
+    $MOSES_BLEU $prep/ref.$test.$lang
