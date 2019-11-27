@@ -5,3 +5,6 @@ my miscellaneous tools for natural language processing
 - *wat/*
   - =evaluate-aspec.sh=: evaluate ASPEC Ja <-> En {dev,devtest,test} by Moses BLEU
     (cf. http://lotus.kuee.kyoto-u.ac.jp/WAT/evaluation/index.html)
+
+- *preprocess/*
+  - =clean-corpus-empty-line.py=: remove the empty lines from bilingual corpus
