@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 
 from argparse import ArgumentParser
-import re
 import sys
 
 
@@ -23,7 +22,7 @@ def main(args):
       open(f, 'r', encoding='utf-8') as fp, \
       open(e, 'r', encoding='utf-8') as ep, \
       open(fo, 'w', encoding='utf-8') as fop, \
-      open(eo,p 'w', encoding='utf-8') as eop:
+      open(eo, 'w', encoding='utf-8') as eop:
         for fl, el, ll in zip(fp, ep, *label_in):
             lines += 1
             fn = len(fl.strip().split())
