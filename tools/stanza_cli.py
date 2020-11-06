@@ -12,13 +12,21 @@ import sys
 import stanza
 import torch
 
+MWT_MODELS = {
+    'ar', 'de', 'en', 'es', 'fr', 'ca', 'cop', 'cs', 'el', 'fa', 'fi', 'gl',
+    'he', 'hy', 'it', 'kk', 'mr', 'pl', 'pt', 'ta', 'tr', 'uk', 'wo'
+}
+
 
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--input', type=str, default='-', metavar='FILE')
     parser.add_argument('--lang', '-l', default='en')
-    parser.add_argument('--model-dir', type=str, metavar='DIR',
-                        default=os.path.join(os.environ['HOME'], 'stanza_resources'))
+    parser.add_argument('--model-dir',
+                        type=str,
+                        metavar='DIR',
+                        default=os.path.join(os.environ['HOME'],
+                                             'stanza_resources'))
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--batch-size', type=int, default=1000)
     parser.add_argument('--depparse', action='store_true')
@@ -33,7 +41,10 @@ def get_stanza_kwargs(args):
         'use_gpu': not args.cpu and torch.cuda.is_available(),
     }
     if args.depparse:
-        kwargs['processors'] = 'tokenize,mwt,pos,lemma,depparse'
+        if args.lang in MWT_MODELS:
+            kwargs['processors'] = 'tokenize,mwt,pos,lemma,depparse'
+        else:
+            kwargs['processors'] = 'tokenize,pos,lemma,depparse'
         kwargs['tokenize_pretokenized'] = True
 
     return kwargs
