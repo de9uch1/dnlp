@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument('--cpu', action='store_true')
     parser.add_argument('--batch-size', type=int, default=1000)
     parser.add_argument('--depparse', action='store_true')
+    parser.add_argument('--tokenize', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -40,12 +41,16 @@ def get_stanza_kwargs(args):
         'dir': args.model_dir,
         'use_gpu': not args.cpu and torch.cuda.is_available(),
     }
+
     if args.depparse:
         if args.lang in MWT_MODELS:
             kwargs['processors'] = 'tokenize,mwt,pos,lemma,depparse'
         else:
             kwargs['processors'] = 'tokenize,pos,lemma,depparse'
-        kwargs['tokenize_pretokenized'] = True
+        kwargs['tokenize_pretokenized'] = not args.tokenize
+    elif args.tokenize:
+        kwargs['processors'] = 'tokenize'
+        kwargs['tokenize_no_ssplit'] = True
 
     return kwargs
 
@@ -58,16 +63,20 @@ def main(args):
     pipeline = stanza.Pipeline(**kwargs)
 
     def run_stanza(lines):
-        doc = pipeline(lines)
         if args.depparse:
+            doc = pipeline([l.split() for l in lines])
             for sent in doc.sentences:
                 print(' '.join(str(word.head) for word in sent.words))
+        elif args.tokenize:
+            doc = pipeline(lines)
+            for sent in doc.sentences:
+                print(' '.join(str(word.text) for word in sent.words))
 
     with fileinput.input(files=[args.input]) as f:
         print('| ', end='', file=sys.stderr, flush=True)
         batch = []
         for i, line in enumerate(f, start=1):
-            batch.append(line.strip().split())
+            batch.append(line.strip())
             if i % args.batch_size == 0:
                 run_stanza(batch)
                 print('{}...'.format(i), end='', file=sys.stderr, flush=True)
