@@ -30,16 +30,6 @@ __EOT__
     exit -1
 }
 
-set -eu
-TEST_DATA=$(readlink -f $TEST_DATA)
-ref_filename=$(basename $TEST_DATA)
-test_set=$(basename $TEST_DATA .txt)
-CORPORA=$(readlink -f $(dirname $TEST_DATA)/..)
-
-OUTDIR=references
-prep=$OUTDIR/$CORPORA
-orig=$prep/orig
-
 if ! [[ -d $DNLP_CACHE_DIR ]]; then
     mkdir -p $DNLP_CACHE_DIR
     if ! [[ -d $DNLP_CACHE_DIR ]]; then
@@ -48,16 +38,22 @@ if ! [[ -d $DNLP_CACHE_DIR ]]; then
     fi
 fi
 
+TEST_DATA=$(readlink -f $TEST_DATA)
+if [[ -z $TEST_DATA ]] || ! [[ -f $TEST_DATA ]]; then
+    echo "reference file not found." >&2
+    usage "TEST_DATA '$TEST_DATA' not found."
+fi
+ref_filename=$(basename $TEST_DATA)
+test_set=$(basename $TEST_DATA .txt)
+CORPORA=$(basename $(readlink -f $(dirname $TEST_DATA)/..))
+
 WORKDIR=$DNLP_CACHE_DIR/wat/evaluate-aspec.sh
 mkdir -p $WORKDIR
 cd $WORKDIR
 
-if [[ -z $TEST_DATA ]] || ! [[ -f $TEST_DATA ]]; then
-    if ! [[ -f $prep/$ref_filename ]]; then
-        echo "reference file not found." >&2
-        usage "TEST_DATA '$TEST_DATA' not found."
-    fi
-fi
+OUTDIR=references
+prep=$OUTDIR/$CORPORA
+orig=$prep/orig
 
 if [[ $# -ne 1 ]] || \
        ([[ $1 != ja ]] && [[ $1 != en ]] && [[ $1 != zh ]]); then
@@ -89,7 +85,7 @@ if ! [[ -d $MOSES_SCRIPTS ]]; then
         mosesdecoder-2.1.1
 fi >&2
 
-if ([[ $tgt = "ja"]] || [[ $tgt = "zh"]]) && ! [[ -d $KYTEA_ROOT ]]; then
+if ([[ $tgt = "ja" ]] || [[ $tgt = "zh" ]]) && ! [[ -d $KYTEA_ROOT ]]; then
     echo 'Downloading Kytea source code (for tokenization)...'
     curl http://www.phontron.com/kytea/download/kytea-0.4.6.tar.gz | tar xzf -
 fi >&2
@@ -110,7 +106,7 @@ if ! [[ -f $RIBES_SCRIPT ]]; then
     curl http://www.kecl.ntt.co.jp/icl/lirg/ribes/package/RIBES-1.02.4.tar.gz | tar xzf -
 fi >&2
 
-if ([[ $tgt = "ja"]] || [[ $tgt = "zh"]]) && ! [[ -f $KYTEA_TOKENIZER ]]; then
+if ([[ $tgt = "ja" ]] || [[ $tgt = "zh" ]]) && ! [[ -f $KYTEA_TOKENIZER ]]; then
     pushd $KYTEA_ROOT
     export CC
     ./configure --prefix=$(pwd)
@@ -187,11 +183,11 @@ function tokenize() {
 }
 
 function eval_bleu() {
-    $MOSES_BLEU $prep/$test_set.$tgt 2>/dev/null
+    $MOSES_BLEU $prep/$test_set.$tgt < $1 2>/dev/null
 }
 
 function eval_ribes() {
-    python3 $RIBES_SCRIPT -c -r $prep/$test_set.$tgt 2>/dev/null
+    python3 $RIBES_SCRIPT -c -r $prep/$test_set.$tgt $1 2>/dev/null
 }
 
 function rmtemp() {
@@ -211,5 +207,5 @@ trap "rmtemp; exit 1" INT PIPE TERM
 sysout=$TMPOUT/sysout.tmp
 
 cat - | tokenize $tgt > $sysout
-cat $sysout | eval_bleu
-cat $sysout | eval_ribes
+eval_bleu $sysout
+eval_ribes $sysout
